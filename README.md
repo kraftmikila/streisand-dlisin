@@ -41,7 +41,7 @@ The profile uses `IPIfNonMatch` so Xray can resolve a domain for IP-rule matchin
 
 The generated import profile uses the existing `direct` and `proxy` outbound tags. It does not change VLESS/Reality nodes.
 
-The repository is private. A private GitHub release URL is not a public GeoFile URL and cannot be fetched by Streisand without GitHub authentication. Publish `custom.dat` to a public HTTPS host before entering its URL in Geofiles. Do not make this repository public unless that is explicitly intended.
+The repository is public. The stable direct URL for Streisand Geofiles is `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom.dat`. It points to the `custom.dat` asset attached to the latest successful release.
 
 ## Updates and validation
 
