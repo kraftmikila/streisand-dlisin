@@ -5,8 +5,10 @@ This repository builds an Xray GeoSite database and an importable Streisand rout
 ## Build outputs
 
 - `custom.dat`: Xray GeoSite database with `DIRECT` and `PROXY` domain categories.
-- `custom-geoip.dat`: Xray GeoIP database with `DIRECT` and `PROXY` IP categories.
-- `streisand-route.txt`: import link in Streisand's `streisand://import/route://` binary-plist format.
+- `custom-geoip.dat`: separate Xray GeoIP database with `DIRECT` and `PROXY` IP categories.
+- `custom-combined.dat`: experimental single-file hybrid containing both domain and IP entries under distinct tags.
+- `streisand-route.txt`: standard two-file import link in Streisand's `streisand://import/route://` binary-plist format.
+- `streisand-route-combined.txt`: experimental import link using only `custom-combined.dat`.
 - `streisand-route.json`: readable version of the GeoFile-based route profile.
 - `streisand-route-standalone.txt` and `.json`: standalone profile with domain rules embedded, no external `custom.dat` required.
 - `proxy-ips.txt`, `direct-ips.txt`: readable source lists used to build the GeoIP database.
@@ -35,17 +37,23 @@ This repository builds an Xray GeoSite database and an importable Streisand rout
 
 Each match dimension is a separate rule to avoid accidental AND matching between domain, IP, and port fields. The IP ranges are stored in GeoIP data rather than embedded in the import link, keeping the link compact.
 
+## Experimental single-file option
+
+Xray's external geodata lookup scans the shared protobuf entry envelope by category tag. GeoSite and GeoIP entries can therefore be placed in one hybrid file if every category has a unique tag. The experimental `custom-combined.dat` uses `DIRECT-DOMAIN`, `PROXY-DOMAIN`, `DIRECT-IP`, and `PROXY-IP`. Its route profile references those four tags in the same file.
+
+This is not a standard standalone GeoSite or GeoIP database. It relies on Xray's tag-based external-file loader accepting both entry types in one file. CI checks the protobuf records and the generated import link, but only an actual Streisand runtime test can confirm compatibility with the installed app/core version. Keep using the standard two-file profile unless the combined profile passes that device test.
+
 ## Installation
 
-1. Add both `custom.dat` and `custom-geoip.dat` to Streisand's Geofiles and wait for them to load.
-2. Import `streisand-route.txt` in Streisand using the `+` button in Routing.
-3. Enable the imported routing profile.
+1. Standard, verified layout: add both `custom.dat` and `custom-geoip.dat` to Streisand's Geofiles, then import `streisand-route.txt`.
+2. Single-file experiment: add only `custom-combined.dat`, then import `streisand-route-combined.txt`. Do not switch to this option until it has been tested on the target Streisand version.
+3. Enable the selected routing profile.
 
 Alternatively, use `streisand-route-standalone.txt` if you do not want to configure a GeoFile. This profile embeds the current domain rules. It must be re-imported after a new release to receive updated domain lists. The GeoFile-based profile remains the smaller and easier-to-refresh option.
 
 The generated import profile uses the existing `direct` and `proxy` outbound tags. It does not change VLESS/Reality nodes.
 
-The repository is public. Stable direct URLs for Streisand Geofiles are `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom.dat` and `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom-geoip.dat`. Both point to assets attached to the latest successful release.
+The repository is public. Stable direct URLs for the standard Geofiles are `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom.dat` and `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom-geoip.dat`. The experimental single-file URL is `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom-combined.dat`. These URLs point to assets attached to the latest successful release.
 
 ## Updates and validation
 
