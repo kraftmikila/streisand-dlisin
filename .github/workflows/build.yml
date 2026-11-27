@@ -39,3 +39,4 @@ jobs:
             dist/direct-ips.txt
             dist/proxy-ports.txt
             dist/report.json
+            dist/streisand-route.json
