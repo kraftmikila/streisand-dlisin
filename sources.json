@@ -1,0 +1,20 @@
+{
+  "dlisin_proxy": "https://raw.githubusercontent.com/dlisin/shadowrocket-config/master/proxy.list",
+  "dlisin_direct": "https://raw.githubusercontent.com/dlisin/shadowrocket-config/master/direct.list",
+  "dlisin_reject": "https://raw.githubusercontent.com/dlisin/shadowrocket-config/master/reject.list",
+  "misha_domains": "https://raw.githubusercontent.com/misha-tgshv/shadowrocket-configuration-file/main/rules/domains_community.list",
+  "misha_domain_ips": "https://raw.githubusercontent.com/misha-tgshv/shadowrocket-configuration-file/main/rules/domain_ips.list",
+  "misha_voice_ports": "https://raw.githubusercontent.com/misha-tgshv/shadowrocket-configuration-file/main/rules/voice_ports.list",
+  "blackmatrix_apple": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Apple/Apple.list",
+  "blackmatrix_discord": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Discord/Discord.list",
+  "blackmatrix_facebook": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Facebook/Facebook.list",
+  "blackmatrix_instagram": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Instagram/Instagram.list",
+  "blackmatrix_openai": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/OpenAI/OpenAI.list",
+  "blackmatrix_spotify": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Spotify/Spotify.list",
+  "blackmatrix_telegram": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Telegram/Telegram.list",
+  "blackmatrix_whatsapp": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/Whatsapp/Whatsapp.list",
+  "blackmatrix_youtube": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket/YouTube/YouTube.list",
+  "zkeen_meta_ips": "https://github.com/toneywhitez/zkeen_rules/releases/latest/download/meta_ips.list",
+  "zkeen_telegram_ips": "https://github.com/toneywhitez/zkeen_rules/releases/latest/download/telegram_ips.list",
+  "zkeen_youtube_ips": "https://github.com/toneywhitez/zkeen_rules/releases/latest/download/youtube_ips.list"
+}
