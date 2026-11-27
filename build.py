@@ -157,10 +157,10 @@ route_profile = {
     "domainMatcher":"hybrid",
     "rules":route_rules
 }
-(OUT / "streisand-route.json").write_text(json.dumps(route_profile, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+(OUT / "streisand-route.json").write_text(json.dumps(route_profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 inner = base64.b64encode(plistlib.dumps(route_profile, fmt=plistlib.FMT_BINARY, sort_keys=False)).decode("ascii")
 route_uri = "streisand://" + base64.b64encode(("import/route://" + inner).encode("utf-8")).decode("ascii")
-(OUT / "streisand-route.txt").write_text(route_uri + "\\n", encoding="utf-8")
+(OUT / "streisand-route.txt").write_text(route_uri + "\n", encoding="utf-8")
 
 print(json.dumps(report, ensure_ascii=False, indent=2))
 if errors:
