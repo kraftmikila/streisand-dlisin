@@ -6,7 +6,8 @@ This repository builds an Xray GeoSite database and an importable Streisand rout
 
 - `custom.dat`: Xray GeoSite database with `DIRECT` and `PROXY` categories.
 - `streisand-route.txt`: import link in Streisand's `streisand://import/route://` binary-plist format.
-- `streisand-route.json`: readable version of the same route profile.
+- `streisand-route.json`: readable version of the GeoFile-based route profile.
+- `streisand-route-standalone.txt` and `.json`: standalone profile with domain rules embedded, no external `custom.dat` required.
 - `proxy-ips.txt`, `direct-ips.txt`: IP rules kept separate from GeoSite.
 - `proxy-ports.txt`: destination ports routed through proxy.
 - `report.json`: source counts, unsupported rule counts, and download errors.
@@ -38,6 +39,8 @@ The profile uses `IPIfNonMatch` so Xray can resolve a domain for IP-rule matchin
 1. Add `custom.dat` to Streisand's Geofiles and wait for it to load.
 2. Import `streisand-route.txt` in Streisand using the `+` button in Routing.
 3. Enable the imported routing profile.
+
+Alternatively, use `streisand-route-standalone.txt` if you do not want to configure a GeoFile. This profile embeds the current domain rules. It must be re-imported after a new release to receive updated domain lists. The GeoFile-based profile remains the smaller and easier-to-refresh option.
 
 The generated import profile uses the existing `direct` and `proxy` outbound tags. It does not change VLESS/Reality nodes.
 
