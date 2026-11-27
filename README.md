@@ -1,34 +1,52 @@
 # Streisand rules based on dlisin/shadowrocket-config
 
-This repository builds an Xray GeoSite database and a minimal Xray routing fragment from the current rule sources referenced by dlisin's upstream shadowrocket.conf.
+This repository builds an Xray GeoSite database and an importable Streisand routing profile from the rule sources referenced by the current upstream dlisin shadowrocket.conf.
 
-## Outputs
-- dist/custom.dat: GeoSite database with DIRECT and PROXY domain categories.
-- dist/streisand-route.json: Xray routing fragment. It uses the existing outbound tags `direct` and `proxy`; it does not create or modify VLESS/Reality nodes.
-- dist/proxy-ips.txt and dist/direct-ips.txt: source IP ranges kept outside GeoSite.
-- dist/proxy-ports.txt: proxy destination ports.
-- dist/report.json: source counts, skipped rule types, and download errors.
+## Build outputs
 
-## Rule translation
-- DOMAIN-SUFFIX becomes Xray RootDomain.
-- DOMAIN becomes Xray Full.
-- DOMAIN-KEYWORD becomes a regex that matches the keyword anywhere in the queried domain.
-- IP-CIDR/IP-CIDR6 and Misha's bare IP list are kept as IP route rules.
-- DST-PORT is kept as a port route rule. Invisible Unicode characters and en dashes in ranges are normalized.
-- USER-AGENT and IP-ASN cannot be represented as domain or IP-CIDR rules by this builder. They are reported as skipped rather than silently misrepresented.
-- The upstream reject.list is empty at the time of the latest build, so no reject rule is invented.
+- `custom.dat`: Xray GeoSite database with `DIRECT` and `PROXY` categories.
+- `streisand-route.txt`: import link in Streisand's `streisand://import/route://` binary-plist format.
+- `streisand-route.json`: readable version of the same route profile.
+- `proxy-ips.txt`, `direct-ips.txt`: IP rules kept separate from GeoSite.
+- `proxy-ports.txt`: destination ports routed through proxy.
+- `report.json`: source counts, unsupported rule counts, and download errors.
+
+## Translation
+
+- `DOMAIN-SUFFIX` -> Xray RootDomain.
+- `DOMAIN` -> Xray Full.
+- `DOMAIN-KEYWORD` -> Xray Regex matching the keyword anywhere in the queried domain.
+- `IP-CIDR` and `IP-CIDR6` -> IP route rules.
+- Bare IPs in Misha's `domain_ips.list` and zkeen IP release lists -> IP route rules.
+- `DST-PORT` -> port route rules. Invisible Unicode characters and en dashes in ranges are normalized.
+- `USER-AGENT` and `IP-ASN` cannot be faithfully represented by this Xray GeoSite/IP-CIDR conversion. They are counted as skipped in `report.json`.
+- The current upstream `reject.list` is empty, so no reject category is invented.
 
 ## Routing order
-1. Private IPv4 ranges from dlisin direct.list go DIRECT.
-2. ext:custom.dat:direct goes DIRECT (currently includes keenetic.link).
-3. ext:custom.dat:proxy goes PROXY.
-4. Explicit service IP ranges and destination ports go PROXY.
-5. Remaining TCP/UDP traffic goes DIRECT.
 
-The generated route fragment uses domainStrategy IPIfNonMatch so IP matching can be attempted after domain rules do not match.
+1. Private/local IP ranges -> DIRECT.
+2. `ext:custom.dat:direct` -> DIRECT.
+3. `ext:custom.dat:proxy` -> PROXY.
+4. Explicit service IP ranges -> PROXY.
+5. Explicit service destination ports -> PROXY.
+6. All remaining TCP/UDP -> DIRECT.
 
-## Build and download
-GitHub Actions runs on push, manually, and daily. It uploads all files under dist/ as a workflow artifact and publishes the binary GeoSite plus route fragment to the latest release. The repository is private, so the release is not anonymously accessible. Download the asset while signed in to GitHub, then import custom.dat into Streisand's Geofiles before using the ext:custom.dat tags.
+The profile uses `IPIfNonMatch` so Xray can resolve a domain for IP-rule matching only when no domain rule matched. Each match dimension is a separate rule to avoid accidental AND matching between domain, IP, and port fields.
+
+## Installation
+
+1. Add `custom.dat` to Streisand's Geofiles and wait for it to load.
+2. Import `streisand-route.txt` in Streisand using the `+` button in Routing.
+3. Enable the imported routing profile.
+
+The generated import profile uses the existing `direct` and `proxy` outbound tags. It does not change VLESS/Reality nodes.
+
+The repository is private. A private GitHub release URL is not a public GeoFile URL and cannot be fetched by Streisand without GitHub authentication. Publish `custom.dat` to a public HTTPS host before entering its URL in Geofiles. Do not make this repository public unless that is explicitly intended.
+
+## Updates and validation
+
+GitHub Actions rebuilds on push and daily. It validates the GeoSite protobuf categories and decodes the generated Streisand binary-plist import payload before publishing. Successful builds publish the files as a workflow artifact and release assets.
 
 ## Sources
-The source URLs are listed in sources.json and mirror the current upstream RULE-SET dependencies in dlisin's shadowrocket.conf. No RU Universal lists or unrelated lists are added.
+
+The exact source URLs are listed in `sources.json`. They mirror the RULE-SET dependencies referenced by the upstream dlisin config. No RU Universal or unrelated lists are added.
