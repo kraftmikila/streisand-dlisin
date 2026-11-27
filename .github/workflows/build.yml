@@ -1,0 +1,41 @@
+name: Build Streisand GeoSite
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Build GeoSite and routing source lists
+        run: python3 build.py
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: streisand-dlisin-build
+          path: dist/
+          if-no-files-found: error
+      - name: Publish latest GeoSite release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest generated GeoSite
+          make_latest: true
+          overwrite_files: true
+          files: |
+            dist/custom.dat
+            dist/proxy-ips.txt
+            dist/direct-ips.txt
+            dist/proxy-ports.txt
+            dist/report.json
