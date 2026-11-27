@@ -20,7 +20,22 @@ jobs:
           python-version: "3.x"
       - name: Build GeoSite and routing source lists
         run: python3 build.py
-      - name: Validate generated GeoSite and routing files\n        run: |\n          python3 - <<'PY'\n          import json, pathlib\n          p=pathlib.Path('dist')\n          route=json.loads((p/'streisand-route.json').read_text())\n          assert (p/'custom.dat').stat().st_size > 1000\n          assert route['domainStrategy']=='IPIfNonMatch'\n          assert route['domainMatcher']=='hybrid'\n          assert any('ext:custom.dat:proxy' in r.get('domain',[]) for r in route['rules'])\n          assert any(r.get('outboundTag')=='direct' and not r.get('domain') and not r.get('ip') for r in route['rules'])\n          assert (p/'streisand-route.txt').read_text().startswith('streisand://')\n          print('GeoSite and Streisand route profile validation passed')\n          PY\n      - name: Upload build outputs
+      - name: Validate generated files
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("dist")
+          route = json.loads((p / "streisand-route.json").read_text())
+          assert (p / "custom.dat").stat().st_size > 1000
+          assert route["domainStrategy"] == "IPIfNonMatch"
+          assert route["domainMatcher"] == "hybrid"
+          assert any("ext:custom.dat:proxy" in r.get("domain", []) for r in route["rules"])
+          assert any("ext:custom.dat:direct" in r.get("domain", []) for r in route["rules"])
+          assert any(r.get("outboundTag") == "direct" and not r.get("domain") and not r.get("ip") for r in route["rules"])
+          assert (p / "streisand-route.txt").read_text().startswith("streisand://")
+          print("GeoSite and Streisand route profile validation passed")
+          PY
+      - name: Upload build outputs
         uses: actions/upload-artifact@v4
         with:
           name: streisand-dlisin-build
@@ -39,4 +54,5 @@ jobs:
             dist/direct-ips.txt
             dist/proxy-ports.txt
             dist/report.json
-            dist/streisand-route.json\n            dist/streisand-route.txt
+            dist/streisand-route.json
+            dist/streisand-route.txt
