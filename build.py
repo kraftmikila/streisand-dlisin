@@ -98,8 +98,12 @@ for name, url in SOURCES.items():
         elif rule in ("USER-AGENT", "IP-ASN"):
             skipped[rule] = skipped.get(rule, 0) + 1
         else:
-            # Unknown directives are not silently translated.
-            skipped[rule] = skipped.get(rule, 0) + 1
+            # zkeen release files may contain bare IPv4/IPv6 addresses or CIDRs.
+            try:
+                net = ipaddress.ip_network(line, strict=False)
+                ips[target].add(str(net))
+            except ValueError:
+                skipped[rule] = skipped.get(rule, 0) + 1
 
 # Misha's domain_ips.list contains bare IP addresses, not Shadowrocket directives.
 try:
