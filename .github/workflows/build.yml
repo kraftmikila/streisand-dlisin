@@ -26,8 +26,10 @@ jobs:
           import base64, json, pathlib, plistlib
           p = pathlib.Path("dist")
           route = json.loads((p / "streisand-route.json").read_text())
+          combined_route = json.loads((p / "streisand-route-combined.json").read_text())
           assert (p / "custom.dat").stat().st_size > 1000
           assert (p / "custom-geoip.dat").stat().st_size > 1000
+          assert (p / "custom-combined.dat").stat().st_size > 1000
           assert any("ext:custom.dat:proxy" in r.get("domain", []) for r in route["rules"])
           assert any("ext:custom.dat:direct" in r.get("domain", []) for r in route["rules"])
           assert any("ext:custom-geoip.dat:proxy" in r.get("ip", []) for r in route["rules"])
@@ -41,6 +43,11 @@ jobs:
               imported = plistlib.loads(base64.b64decode(outer.split("://", 1)[1]))
               assert imported == expected
           validate_import("streisand-route", route)
+          validate_import("streisand-route-combined", combined_route)
+          assert any("ext:custom-combined.dat:DIRECT-DOMAIN" in r.get("domain", []) for r in combined_route["rules"])
+          assert any("ext:custom-combined.dat:PROXY-DOMAIN" in r.get("domain", []) for r in combined_route["rules"])
+          assert any("ext:custom-combined.dat:DIRECT-IP" in r.get("ip", []) for r in combined_route["rules"])
+          assert any("ext:custom-combined.dat:PROXY-IP" in r.get("ip", []) for r in combined_route["rules"])
           standalone = json.loads((p / "streisand-route-standalone.json").read_text())
           assert any(r.get("domain") and any(not d.startswith("ext:") for d in r["domain"]) for r in standalone["rules"])
           assert not any("ext:custom.dat:" in d for r in standalone["rules"] for d in r.get("domain", []))
@@ -88,7 +95,18 @@ jobs:
           assert geoip_tags.get("PROXY", 0) > 0 and geoip_tags.get("DIRECT", 0) > 0
           print("Validated GeoSite protobuf:", tags)
           print("Validated GeoIP protobuf:", geoip_tags)
-          print("Validated Streisand import route and bplist payload")
+          combined_tags = {}
+          for number, wire, value in fields((p / "custom-combined.dat").read_bytes()):
+              assert number == 1 and wire == 2
+              nested = list(fields(value))
+              tag = next(v.decode() for n, _, v in nested if n == 1)
+              count = sum(1 for n, _, _ in nested if n == 2)
+              combined_tags[tag] = count
+          for tag in ("DIRECT-DOMAIN", "PROXY-DOMAIN", "DIRECT-IP", "PROXY-IP"):
+              assert combined_tags.get(tag, 0) > 0, f"Missing or empty combined tag: {tag}"
+          assert len(combined_tags) == 4, f"Unexpected combined tags: {combined_tags}"
+          print("Validated hybrid GeoSite+GeoIP protobuf:", combined_tags)
+          print("Validated Streisand import routes and bplist payloads")
           PY
       - name: Upload build outputs
         uses: actions/upload-artifact@v4
@@ -106,11 +124,14 @@ jobs:
           files: |
             dist/custom.dat
             dist/custom-geoip.dat
+            dist/custom-combined.dat
             dist/proxy-ips.txt
             dist/direct-ips.txt
             dist/proxy-ports.txt
             dist/report.json
             dist/streisand-route.json
             dist/streisand-route.txt
+            dist/streisand-route-combined.json
+            dist/streisand-route-combined.txt
             dist/streisand-route-standalone.json
             dist/streisand-route-standalone.txt
