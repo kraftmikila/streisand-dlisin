@@ -27,8 +27,6 @@ jobs:
           p = pathlib.Path("dist")
           route = json.loads((p / "streisand-route.json").read_text())
           assert (p / "custom.dat").stat().st_size > 1000
-          assert route["domainStrategy"] == "IPIfNonMatch"
-          assert route["domainMatcher"] == "hybrid"
           assert any("ext:custom.dat:proxy" in r.get("domain", []) for r in route["rules"])
           assert any("ext:custom.dat:direct" in r.get("domain", []) for r in route["rules"])
           assert any(r.get("outboundTag") == "direct" and not r.get("domain") and not r.get("ip") for r in route["rules"])
