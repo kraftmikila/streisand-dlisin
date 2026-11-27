@@ -1,4 +1,4 @@
-name: Build Streisand GeoSite
+name: Build Streisand Routing Data
 
 on:
   workflow_dispatch:
