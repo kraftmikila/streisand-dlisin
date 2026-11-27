@@ -4,11 +4,12 @@ This repository builds an Xray GeoSite database and an importable Streisand rout
 
 ## Build outputs
 
-- `custom.dat`: Xray GeoSite database with `DIRECT` and `PROXY` categories.
+- `custom.dat`: Xray GeoSite database with `DIRECT` and `PROXY` domain categories.
+- `custom-geoip.dat`: Xray GeoIP database with `DIRECT` and `PROXY` IP categories.
 - `streisand-route.txt`: import link in Streisand's `streisand://import/route://` binary-plist format.
 - `streisand-route.json`: readable version of the GeoFile-based route profile.
 - `streisand-route-standalone.txt` and `.json`: standalone profile with domain rules embedded, no external `custom.dat` required.
-- `proxy-ips.txt`, `direct-ips.txt`: IP rules kept separate from GeoSite.
+- `proxy-ips.txt`, `direct-ips.txt`: readable source lists used to build the GeoIP database.
 - `proxy-ports.txt`: destination ports routed through proxy.
 - `report.json`: source counts, unsupported rule counts, and download errors.
 
@@ -25,18 +26,18 @@ This repository builds an Xray GeoSite database and an importable Streisand rout
 
 ## Routing order
 
-1. Private/local IP ranges -> DIRECT.
+1. Private/local IP ranges from `ext:custom-geoip.dat:direct` -> DIRECT.
 2. `ext:custom.dat:direct` -> DIRECT.
 3. `ext:custom.dat:proxy` -> PROXY.
-4. Explicit service IP ranges -> PROXY.
+4. Service IP ranges from `ext:custom-geoip.dat:proxy` -> PROXY.
 5. Explicit service destination ports -> PROXY.
-6. All remaining TCP/UDP -> DIRECT.
+6. All remaining traffic -> DIRECT.
 
-The profile uses `IPIfNonMatch` so Xray can resolve a domain for IP-rule matching only when no domain rule matched. Each match dimension is a separate rule to avoid accidental AND matching between domain, IP, and port fields.
+Each match dimension is a separate rule to avoid accidental AND matching between domain, IP, and port fields. The IP ranges are stored in GeoIP data rather than embedded in the import link, keeping the link compact.
 
 ## Installation
 
-1. Add `custom.dat` to Streisand's Geofiles and wait for it to load.
+1. Add both `custom.dat` and `custom-geoip.dat` to Streisand's Geofiles and wait for them to load.
 2. Import `streisand-route.txt` in Streisand using the `+` button in Routing.
 3. Enable the imported routing profile.
 
@@ -44,7 +45,7 @@ Alternatively, use `streisand-route-standalone.txt` if you do not want to config
 
 The generated import profile uses the existing `direct` and `proxy` outbound tags. It does not change VLESS/Reality nodes.
 
-The repository is public. The stable direct URL for Streisand Geofiles is `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom.dat`. It points to the `custom.dat` asset attached to the latest successful release.
+The repository is public. Stable direct URLs for Streisand Geofiles are `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom.dat` and `https://github.com/kraftmikila/streisand-dlisin/releases/latest/download/custom-geoip.dat`. Both point to assets attached to the latest successful release.
 
 ## Updates and validation
 
