@@ -172,6 +172,37 @@ route_profile = {
     "uuid":"8E1D3A91-4B67-4F1A-9C22-5B6D2E7A104C",
     "rules":route_rules
 }
+# Experimental single-file hybrid: Xray looks up each ext:file:tag by scanning
+# the shared top-level protobuf entry envelope. Domain and IP categories must
+# therefore have distinct tags, since both loaders point at the same file.
+combined_blob = (
+    geosite("DIRECT-DOMAIN", domains["direct"]) +
+    geosite("PROXY-DOMAIN", domains["proxy"]) +
+    geoip_entry("DIRECT-IP", ips["direct"]) +
+    geoip_entry("PROXY-IP", ips["proxy"])
+)
+(OUT / "custom-combined.dat").write_bytes(combined_blob)
+
+combined_rules = json.loads(json.dumps(route_rules))
+for rule in combined_rules:
+    if "domain" in rule:
+        rule["domain"] = [
+            "ext:custom-combined.dat:DIRECT-DOMAIN" if x == "ext:custom.dat:direct" else
+            "ext:custom-combined.dat:PROXY-DOMAIN" if x == "ext:custom.dat:proxy" else x
+            for x in rule["domain"]
+        ]
+    if "ip" in rule:
+        rule["ip"] = [
+            "ext:custom-combined.dat:DIRECT-IP" if x == "ext:custom-geoip.dat:direct" else
+            "ext:custom-combined.dat:PROXY-IP" if x == "ext:custom-geoip.dat:proxy" else x
+            for x in rule["ip"]
+        ]
+route_profile_combined = {
+    "name": "dlisin-direct-proxy-combined",
+    "uuid": "B82E7F53-2C14-4A6D-8F31-9E5C7A2D104B",
+    "rules": combined_rules
+}
+
 def write_route_files(profile, stem):
     (OUT / f"{stem}.json").write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     inner = base64.b64encode(plistlib.dumps(profile, fmt=plistlib.FMT_BINARY, sort_keys=False)).decode("ascii")
@@ -179,6 +210,7 @@ def write_route_files(profile, stem):
     (OUT / f"{stem}.txt").write_text(uri + "\n", encoding="utf-8")
 
 write_route_files(route_profile, "streisand-route")
+write_route_files(route_profile_combined, "streisand-route-combined")
 
 # Standalone profile: inline domain rules, so no external custom.dat is required.
 def inline_domains(items):
