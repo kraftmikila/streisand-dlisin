@@ -27,8 +27,11 @@ jobs:
           p = pathlib.Path("dist")
           route = json.loads((p / "streisand-route.json").read_text())
           assert (p / "custom.dat").stat().st_size > 1000
+          assert (p / "custom-geoip.dat").stat().st_size > 1000
           assert any("ext:custom.dat:proxy" in r.get("domain", []) for r in route["rules"])
           assert any("ext:custom.dat:direct" in r.get("domain", []) for r in route["rules"])
+          assert any("ext:custom-geoip.dat:proxy" in r.get("ip", []) for r in route["rules"])
+          assert any("ext:custom-geoip.dat:direct" in r.get("ip", []) for r in route["rules"])
           assert any(r.get("outboundTag") == "direct" and not r.get("domain") and not r.get("ip") for r in route["rules"])
           def validate_import(stem, expected):
               uri = (p / f"{stem}.txt").read_text().strip()
@@ -75,7 +78,16 @@ jobs:
               count = sum(1 for n, _, _ in nested if n == 2)
               tags[tag] = count
           assert tags.get("PROXY", 0) > 0 and tags.get("DIRECT", 0) > 0
+          geoip_tags = {}
+          for number, wire, value in fields((p / "custom-geoip.dat").read_bytes()):
+              assert number == 1 and wire == 2
+              nested = list(fields(value))
+              tag = next(v.decode() for n, _, v in nested if n == 1)
+              count = sum(1 for n, _, _ in nested if n == 2)
+              geoip_tags[tag] = count
+          assert geoip_tags.get("PROXY", 0) > 0 and geoip_tags.get("DIRECT", 0) > 0
           print("Validated GeoSite protobuf:", tags)
+          print("Validated GeoIP protobuf:", geoip_tags)
           print("Validated Streisand import route and bplist payload")
           PY
       - name: Upload build outputs
@@ -93,6 +105,7 @@ jobs:
           overwrite_files: true
           files: |
             dist/custom.dat
+            dist/custom-geoip.dat
             dist/proxy-ips.txt
             dist/direct-ips.txt
             dist/proxy-ports.txt
