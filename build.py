@@ -142,19 +142,17 @@ private_ips = sorted(ips["direct"], key=lambda x: (ipaddress.ip_network(x).versi
 proxy_ips = sorted(ips["proxy"], key=lambda x: (ipaddress.ip_network(x).version, int(ipaddress.ip_network(x).network_address), ipaddress.ip_network(x).prefixlen))
 route_rules = []
 if private_ips:
-    route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","ip":private_ips,"network":"tcp,udp"})
-route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","domain":["ext:custom.dat:direct"],"network":"tcp,udp"})
-route_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","domain":["ext:custom.dat:proxy"],"network":"tcp,udp"})
+    route_rules.append({"outboundTag":"direct","ip":private_ips})
+route_rules.append({"outboundTag":"direct","domain":["ext:custom.dat:direct"]})
+route_rules.append({"outboundTag":"proxy","domain":["ext:custom.dat:proxy"]})
 if proxy_ips:
-    route_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","ip":proxy_ips,"network":"tcp,udp"})
+    route_rules.append({"outboundTag":"proxy","ip":proxy_ips})
 if ports:
-    route_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0]))),"network":"tcp,udp"})
-route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","network":"tcp,udp"})
+    route_rules.append({"outboundTag":"proxy","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0])))})
+route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid"})
 route_profile = {
     "name":"dlisin-direct-proxy",
     "uuid":"8E1D3A91-4B67-4F1A-9C22-5B6D2E7A104C",
-    "domainStrategy":"IPIfNonMatch",
-    "domainMatcher":"hybrid",
     "rules":route_rules
 }
 def write_route_files(profile, stem):
@@ -172,21 +170,19 @@ def inline_domains(items):
 
 standalone_rules = []
 if private_ips:
-    standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","ip":private_ips,"network":"tcp,udp"})
+    standalone_rules.append({"outboundTag":"direct","ip":private_ips})
 if domains["direct"]:
-    standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","domain":inline_domains(domains["direct"]),"network":"tcp,udp"})
+    standalone_rules.append({"outboundTag":"direct","domain":inline_domains(domains["direct"])})
 if domains["proxy"]:
-    standalone_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","domain":inline_domains(domains["proxy"]),"network":"tcp,udp"})
+    standalone_rules.append({"outboundTag":"proxy","domain":inline_domains(domains["proxy"])})
 if proxy_ips:
-    standalone_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","ip":proxy_ips,"network":"tcp,udp"})
+    standalone_rules.append({"outboundTag":"proxy","ip":proxy_ips})
 if ports:
-    standalone_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0]))),"network":"tcp,udp"})
-standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","network":"tcp,udp"})
+    standalone_rules.append({"outboundTag":"proxy","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0])))})
+standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid"})
 standalone_profile = {
     "name":"dlisin-direct-proxy-standalone",
     "uuid":"A71D6C42-93E8-4B17-8D30-6C1F5A92E804",
-    "domainStrategy":"IPIfNonMatch",
-    "domainMatcher":"hybrid",
     "rules":standalone_rules
 }
 write_route_files(standalone_profile, "streisand-route-standalone")
