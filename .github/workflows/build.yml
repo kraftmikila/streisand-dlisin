@@ -23,7 +23,7 @@ jobs:
       - name: Validate generated files
         run: |
           python3 - <<'PY'
-          import json, pathlib
+          import base64, json, pathlib, plistlib
           p = pathlib.Path("dist")
           route = json.loads((p / "streisand-route.json").read_text())
           assert (p / "custom.dat").stat().st_size > 1000
@@ -32,8 +32,45 @@ jobs:
           assert any("ext:custom.dat:proxy" in r.get("domain", []) for r in route["rules"])
           assert any("ext:custom.dat:direct" in r.get("domain", []) for r in route["rules"])
           assert any(r.get("outboundTag") == "direct" and not r.get("domain") and not r.get("ip") for r in route["rules"])
-          assert (p / "streisand-route.txt").read_text().startswith("streisand://")
-          print("GeoSite and Streisand route profile validation passed")
+          uri = (p / "streisand-route.txt").read_text().strip()
+          assert uri.startswith("streisand://")
+          outer = base64.b64decode(uri[len("streisand://"):]).decode()
+          assert outer.startswith("import/route://")
+          imported = plistlib.loads(base64.b64decode(outer.split("://", 1)[1]))
+          assert imported == route
+          def varint(data, pos):
+              n = shift = 0
+              while True:
+                  b = data[pos]
+                  pos += 1
+                  n |= (b & 127) << shift
+                  if b < 128:
+                      return n, pos
+                  shift += 7
+          def fields(data):
+              pos = 0
+              while pos < len(data):
+                  key, pos = varint(data, pos)
+                  number, wire = key >> 3, key & 7
+                  if wire == 0:
+                      value, pos = varint(data, pos)
+                  elif wire == 2:
+                      size, pos = varint(data, pos)
+                      value = data[pos:pos + size]
+                      pos += size
+                  else:
+                      raise ValueError("Unsupported protobuf wire type")
+                  yield number, wire, value
+          tags = {}
+          for number, wire, value in fields((p / "custom.dat").read_bytes()):
+              assert number == 1 and wire == 2
+              nested = list(fields(value))
+              tag = next(v.decode() for n, _, v in nested if n == 1)
+              count = sum(1 for n, _, _ in nested if n == 2)
+              tags[tag] = count
+          assert tags.get("PROXY", 0) > 0 and tags.get("DIRECT", 0) > 0
+          print("Validated GeoSite protobuf:", tags)
+          print("Validated Streisand import route and bplist payload")
           PY
       - name: Upload build outputs
         uses: actions/upload-artifact@v4
