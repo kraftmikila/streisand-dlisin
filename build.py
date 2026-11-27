@@ -126,6 +126,23 @@ for tag in ("direct", "proxy"):
 
 blob = geosite("DIRECT", domains["direct"]) + geosite("PROXY", domains["proxy"])
 (OUT / "custom.dat").write_bytes(blob)
+
+# Build a separate Xray GeoIP protobuf file so the imported routing link
+# contains only two short IP references instead of hundreds of inline CIDRs.
+def geoip_cidr(network):
+    net = ipaddress.ip_network(network, strict=False)
+    cidr = field_bytes(1, net.network_address.packed)
+    cidr += varint((2 << 3) | 0) + varint(net.prefixlen)
+    return field_bytes(2, cidr)
+
+def geoip_entry(tag, networks):
+    entry = field_bytes(1, tag.encode())
+    for network in sorted(networks, key=lambda x: (ipaddress.ip_network(x).version, int(ipaddress.ip_network(x).network_address), ipaddress.ip_network(x).prefixlen)):
+        entry += geoip_cidr(network)
+    return field_bytes(1, entry)
+
+geoip_blob = geoip_entry("DIRECT", ips["direct"]) + geoip_entry("PROXY", ips["proxy"])
+(OUT / "custom-geoip.dat").write_bytes(geoip_blob)
 (OUT / "proxy-ips.txt").write_text("\n".join(sorted(ips["proxy"], key=lambda x: (ipaddress.ip_network(x).version, int(ipaddress.ip_network(x).network_address), ipaddress.ip_network(x).prefixlen))) + "\n", encoding="utf-8")
 (OUT / "direct-ips.txt").write_text("\n".join(sorted(ips["direct"])) + "\n", encoding="utf-8")
 (OUT / "proxy-ports.txt").write_text("\n".join(sorted(ports, key=lambda x: int(x.split("-")[0]))) + "\n", encoding="utf-8")
@@ -142,11 +159,11 @@ private_ips = sorted(ips["direct"], key=lambda x: (ipaddress.ip_network(x).versi
 proxy_ips = sorted(ips["proxy"], key=lambda x: (ipaddress.ip_network(x).version, int(ipaddress.ip_network(x).network_address), ipaddress.ip_network(x).prefixlen))
 route_rules = []
 if private_ips:
-    route_rules.append({"outboundTag":"direct","ip":private_ips})
+    route_rules.append({"outboundTag":"direct","ip":["ext:custom-geoip.dat:direct"]})
 route_rules.append({"outboundTag":"direct","domain":["ext:custom.dat:direct"]})
 route_rules.append({"outboundTag":"proxy","domain":["ext:custom.dat:proxy"]})
 if proxy_ips:
-    route_rules.append({"outboundTag":"proxy","ip":proxy_ips})
+    route_rules.append({"outboundTag":"proxy","ip":["ext:custom-geoip.dat:proxy"]})
 if ports:
     route_rules.append({"outboundTag":"proxy","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0])))})
 route_rules.append({"outboundTag":"direct"})
