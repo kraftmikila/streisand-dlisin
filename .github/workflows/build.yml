@@ -32,12 +32,20 @@ jobs:
           assert any("ext:custom.dat:proxy" in r.get("domain", []) for r in route["rules"])
           assert any("ext:custom.dat:direct" in r.get("domain", []) for r in route["rules"])
           assert any(r.get("outboundTag") == "direct" and not r.get("domain") and not r.get("ip") for r in route["rules"])
-          uri = (p / "streisand-route.txt").read_text().strip()
-          assert uri.startswith("streisand://")
-          outer = base64.b64decode(uri[len("streisand://"):]).decode()
-          assert outer.startswith("import/route://")
-          imported = plistlib.loads(base64.b64decode(outer.split("://", 1)[1]))
-          assert imported == route
+          def validate_import(stem, expected):
+              uri = (p / f"{stem}.txt").read_text().strip()
+              assert uri.startswith("streisand://")
+              outer = base64.b64decode(uri[len("streisand://"):]).decode()
+              assert outer.startswith("import/route://")
+              imported = plistlib.loads(base64.b64decode(outer.split("://", 1)[1]))
+              assert imported == expected
+          validate_import("streisand-route", route)
+          standalone = json.loads((p / "streisand-route-standalone.json").read_text())
+          assert any(r.get("domain") and any(not d.startswith("ext:") for d in r["domain"]) for r in standalone["rules"])
+          assert not any("ext:custom.dat:" in d for r in standalone["rules"] for d in r.get("domain", []))
+          assert any(r.get("outboundTag") == "proxy" and r.get("domain") for r in standalone["rules"])
+          assert any(r.get("outboundTag") == "direct" and not r.get("domain") and not r.get("ip") for r in standalone["rules"])
+          validate_import("streisand-route-standalone", standalone)
           def varint(data, pos):
               n = shift = 0
               while True:
@@ -93,3 +101,5 @@ jobs:
             dist/report.json
             dist/streisand-route.json
             dist/streisand-route.txt
+            dist/streisand-route-standalone.json
+            dist/streisand-route-standalone.txt
