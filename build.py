@@ -135,6 +135,33 @@ report = {
   "skipped_rules": skipped, "download_errors": errors
 }
 (OUT / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+# Build a Streisand importable routing profile. Each match dimension is
+# a separate rule because Xray combines fields inside one rule with AND.
+import base64, plistlib
+private_ips = sorted(ips["direct"], key=lambda x: (ipaddress.ip_network(x).version, int(ipaddress.ip_network(x).network_address), ipaddress.ip_network(x).prefixlen))
+proxy_ips = sorted(ips["proxy"], key=lambda x: (ipaddress.ip_network(x).version, int(ipaddress.ip_network(x).network_address), ipaddress.ip_network(x).prefixlen))
+route_rules = []
+if private_ips:
+    route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","ip":private_ips,"network":"tcp,udp"})
+route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","domain":["ext:custom.dat:direct"],"network":"tcp,udp"})
+route_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","domain":["ext:custom.dat:proxy"],"network":"tcp,udp"})
+if proxy_ips:
+    route_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","ip":proxy_ips,"network":"tcp,udp"})
+if ports:
+    route_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0]))),"network":"tcp,udp"})
+route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","network":"tcp,udp"})
+route_profile = {
+    "name":"dlisin-direct-proxy",
+    "uuid":"8E1D3A91-4B67-4F1A-9C22-5B6D2E7A104C",
+    "domainStrategy":"IPIfNonMatch",
+    "domainMatcher":"hybrid",
+    "rules":route_rules
+}
+(OUT / "streisand-route.json").write_text(json.dumps(route_profile, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+inner = base64.b64encode(plistlib.dumps(route_profile, fmt=plistlib.FMT_BINARY, sort_keys=False)).decode("ascii")
+route_uri = "streisand://" + base64.b64encode(("import/route://" + inner).encode("utf-8")).decode("ascii")
+(OUT / "streisand-route.txt").write_text(route_uri + "\\n", encoding="utf-8")
+
 print(json.dumps(report, ensure_ascii=False, indent=2))
 if errors:
     raise SystemExit("One or more required source downloads failed; refusing to publish incomplete data.")
