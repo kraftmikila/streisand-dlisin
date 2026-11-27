@@ -149,7 +149,7 @@ if proxy_ips:
     route_rules.append({"outboundTag":"proxy","ip":proxy_ips})
 if ports:
     route_rules.append({"outboundTag":"proxy","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0])))})
-route_rules.append({"outboundTag":"direct","domainMatcher":"hybrid"})
+route_rules.append({"outboundTag":"direct"})
 route_profile = {
     "name":"dlisin-direct-proxy",
     "uuid":"8E1D3A91-4B67-4F1A-9C22-5B6D2E7A104C",
@@ -179,7 +179,7 @@ if proxy_ips:
     standalone_rules.append({"outboundTag":"proxy","ip":proxy_ips})
 if ports:
     standalone_rules.append({"outboundTag":"proxy","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0])))})
-standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid"})
+standalone_rules.append({"outboundTag":"direct"})
 standalone_profile = {
     "name":"dlisin-direct-proxy-standalone",
     "uuid":"A71D6C42-93E8-4B17-8D30-6C1F5A92E804",
