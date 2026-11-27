@@ -157,10 +157,39 @@ route_profile = {
     "domainMatcher":"hybrid",
     "rules":route_rules
 }
-(OUT / "streisand-route.json").write_text(json.dumps(route_profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-inner = base64.b64encode(plistlib.dumps(route_profile, fmt=plistlib.FMT_BINARY, sort_keys=False)).decode("ascii")
-route_uri = "streisand://" + base64.b64encode(("import/route://" + inner).encode("utf-8")).decode("ascii")
-(OUT / "streisand-route.txt").write_text(route_uri + "\n", encoding="utf-8")
+def write_route_files(profile, stem):
+    (OUT / f"{stem}.json").write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    inner = base64.b64encode(plistlib.dumps(profile, fmt=plistlib.FMT_BINARY, sort_keys=False)).decode("ascii")
+    uri = "streisand://" + base64.b64encode(("import/route://" + inner).encode("utf-8")).decode("ascii")
+    (OUT / f"{stem}.txt").write_text(uri + "\\n", encoding="utf-8")
+
+write_route_files(route_profile, "streisand-route")
+
+# Standalone profile: inline domain rules, so no external custom.dat is required.
+def inline_domains(items):
+    prefixes = {1: "regexp:", 2: "domain:", 3: "full:"}
+    return [prefixes[k] + value for k, value in sorted(items)]
+
+standalone_rules = []
+if private_ips:
+    standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","ip":private_ips,"network":"tcp,udp"})
+if domains["direct"]:
+    standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","domain":inline_domains(domains["direct"]),"network":"tcp,udp"})
+if domains["proxy"]:
+    standalone_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","domain":inline_domains(domains["proxy"]),"network":"tcp,udp"})
+if proxy_ips:
+    standalone_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","ip":proxy_ips,"network":"tcp,udp"})
+if ports:
+    standalone_rules.append({"outboundTag":"proxy","domainMatcher":"hybrid","port":",".join(sorted(ports, key=lambda x: int(x.split("-")[0]))),"network":"tcp,udp"})
+standalone_rules.append({"outboundTag":"direct","domainMatcher":"hybrid","network":"tcp,udp"})
+standalone_profile = {
+    "name":"dlisin-direct-proxy-standalone",
+    "uuid":"A71D6C42-93E8-4B17-8D30-6C1F5A92E804",
+    "domainStrategy":"IPIfNonMatch",
+    "domainMatcher":"hybrid",
+    "rules":standalone_rules
+}
+write_route_files(standalone_profile, "streisand-route-standalone")
 
 print(json.dumps(report, ensure_ascii=False, indent=2))
 if errors:
