@@ -158,10 +158,10 @@ route_profile = {
     "rules":route_rules
 }
 def write_route_files(profile, stem):
-    (OUT / f"{stem}.json").write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    (OUT / f"{stem}.json").write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     inner = base64.b64encode(plistlib.dumps(profile, fmt=plistlib.FMT_BINARY, sort_keys=False)).decode("ascii")
     uri = "streisand://" + base64.b64encode(("import/route://" + inner).encode("utf-8")).decode("ascii")
-    (OUT / f"{stem}.txt").write_text(uri + "\\n", encoding="utf-8")
+    (OUT / f"{stem}.txt").write_text(uri + "\n", encoding="utf-8")
 
 write_route_files(route_profile, "streisand-route")
 
